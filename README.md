@@ -1,76 +1,72 @@
-<div align="center">
+# hmz-openclaw-skills-official
 
-# 🦞 OpenClaw Skills — Official Skill Registry
+> **Official OpenClaw skill set** — curated skills optimized for the OpenClaw gateway, enabling multi-provider AI routing within Claude Code workflows.
 
-**Integrated by [Hafiz Muhammad Zulqarnain](https://github.com/hmzainjamil)**  
-*Claude AI Power User | AI Systems Engineer*
-
-[![System](https://img.shields.io/badge/Part_of-claude--ai--system-blue?style=flat-square)](https://github.com/hmzainjamil/claude-ai-system)
-[![Skills](https://img.shields.io/badge/Skills-Official_Registry-blue?style=flat-square)](#)
-
-</div>
+Part of [claude-ai-system](https://github.com/hmzainjamil/claude-ai-system).
 
 ---
 
 ## Overview
 
-Official skill registry for OpenClaw — the Claude Code skill management framework. This repo contains the canonical skill definitions used across the HMZ AI system.
-
-## What Are Skills?
-
-Skills are structured prompts stored as markdown files that extend Claude's capabilities with domain-specific knowledge, workflows, and automation pipelines. Each skill activates via keyword detection and deactivates after the task completes.
-
-## Skill Structure
-
-```
-skill-name/
-├── SKILL.md          ← Main skill definition
-│   ├── frontmatter   ← name, description, allowed-tools
-│   ├── triggers      ← keywords that auto-activate this skill
-│   ├── workflow      ← step-by-step pipeline
-│   └── examples      ← usage examples
-└── assets/           ← optional supporting files
-```
-
-## HMZ Active Skills (45 total)
-
-| Category | Skills |
-|---|---|
-| Lead Generation | lead-gen-ai, vibe-prospecting, client-hunting |
-| Website Building | website-builder, website-lead-agency, framer-motion-builder |
-| Ads Management | ads-strategy, ads-copy, ads-creative, ads-keywords, ads-competitors |
-| SEO & GEO | geo, geo-technical, geo-content, geo-schema, geo-ai-visibility |
-| Reporting | report-creator, ads-report-pdf, audit-360 |
-| UI/UX | ui-ux-promax, premium-web-design, framer-motion-builder |
-| Agency Ops | ugc-agency, market-social, agency-pipeline |
-| Optimization | optimize-commands, launch-optimized, caveman |
-| Data | airtable-sdk, openpyxl-export |
-
-## Skill Management Commands
-
-```bash
-# Activate a skill
-~/.claude/bin/skill-on <skill-name>
-
-# Deactivate a skill  
-~/.claude/bin/skill-off <skill-name>
-
-# Search skills
-~/.claude/bin/skill-search <keyword>
-
-# List all active skills
-~/.claude/bin/skill-list
-
-# Auto-activate based on prompt
-~/.claude/bin/skill-auto-activate "your prompt here"
-```
-
-## Skill Archive
-
-9,528 archived skills live at:
-- **Local**: `~/.claude/skills-archive/`
-- **GitHub**: [hmz-skills-archive](https://github.com/hmzainjamil/hmz-skills-archive)
+These are the official skills designed and tested specifically for the OpenClaw AI gateway. Each skill is optimized for cost efficiency, routing correctness, and output quality.
 
 ---
 
-**Part of [claude-ai-system](https://github.com/hmzainjamil/claude-ai-system)**
+## Skill Categories
+
+### Model Routing Skills
+| Skill | Purpose | Preferred Model |
+|---|---|---|
+| `code-gen-router` | Route code generation tasks | DeepSeek-V3 |
+| `research-router` | Route research + analysis | Groq llama3-70b |
+| `content-router` | Route content drafting | GPT-4o-mini |
+| `reasoning-router` | Route complex reasoning | DeepSeek-V3 |
+| `local-first-router` | Force local model (Ollama/GPT4All) | Ollama |
+
+### Provider Skills
+| Skill | Provider | Use Case |
+|---|---|---|
+| `groq-burst` | Groq | Ultra-fast inference tasks |
+| `gemini-research` | Gemini 2.0 Flash | Research, summarization |
+| `deepseek-code` | DeepSeek-V3 | Code generation, debugging |
+| `openrouter-smart` | OpenRouter | Dynamic cheapest model |
+| `ollama-local` | Ollama | Offline, zero-cost tasks |
+
+### Quality Control Skills
+| Skill | Purpose |
+|---|---|
+| `output-validator` | Validate model output quality before returning |
+| `cost-guard` | Reject expensive model calls when cheaper alternative exists |
+| `fallback-handler` | Retry with backup model on provider failure |
+
+---
+
+## Integration
+
+```bash
+# Auto-activates via OpenClaw gateway
+# No manual setup required — gateway routes based on task type
+
+# Manual override
+~/.claude/bin/skill-on code-gen-router
+# → Forces DeepSeek-V3 for all code tasks this session
+```
+
+---
+
+## Cost Optimization Rules
+
+1. Never use Claude for tasks where Groq/Gemini suffice
+2. Always try local Ollama first for small tasks (< 500 tokens)
+3. Use OpenRouter smart routing for tasks over 2k tokens
+4. Batch parallel calls — 1 round-trip beats 5 sequential
+
+---
+
+## Full System
+
+[claude-ai-system](https://github.com/hmzainjamil/claude-ai-system) | [hmz-openclaw](https://github.com/hmzainjamil/hmz-openclaw) | [claude-ai-skills](https://github.com/hmzainjamil/claude-ai-skills)
+
+---
+
+*HMZ AI Agency — auto-synced daily*
