@@ -1,111 +1,125 @@
 # hmz-openclaw-skills-official
 
-![OpenClaw](https://img.shields.io/badge/OpenClaw-Official_Skills-E74C3C?style=flat&labelColor=000) ![Skills](https://img.shields.io/badge/skills-production_certified-blue?style=flat&labelColor=555) ![Gateway](https://img.shields.io/badge/gateway-port_51827-orange?style=flat&labelColor=555) ![Status](https://img.shields.io/badge/status-always--on-green?style=flat&labelColor=555)
+> **Official OpenClaw skill definitions — production-grade Claude Code skills for OpenClaw gateway**
 
-OpenClaw official skill library — production-certified MCP skills that extend Claude's capabilities through the OpenClaw gateway. These are not experimental prompts. Every skill here has been validated, versioned, and deployed to the permanent LaunchAgent at `ai.openclaw.gateway`.
+[![skills](https://img.shields.io/badge/skills-official-blue?style=flat)](.) [![gateway](https://img.shields.io/badge/gateway-OpenClaw-purple?style=flat)](.) [![status](https://img.shields.io/badge/status-production-brightgreen?style=flat)](.)
 
-## 🧠 WHAT THIS IS
+[Overview](#overview) · [Skills](#skills) · [Format](#format) · [Usage](#usage) · [Tips](#tips)
 
-OpenClaw runs at `http://127.0.0.1:51827` as a permanent LaunchAgent. It exposes skills to Claude Code as MCP tools — each skill is a purpose-built capability with its own input schema, routing config, and output contract.
-
-This repo holds the _official_ skill set: vetted, tested, and locked. Experimental skills live in `hmz-skills-archive` until they graduate here.
-
-| Skill | Tool Name | Description |
-|---|---|---|
-| Model Router | `oclaw_route` | Routes any task to cheapest capable model (Tier 0 mandate) |
-| Cost Estimator | `oclaw_estimate_cost` | Estimates token cost before running expensive tasks |
-| Prompt Compressor | `oclaw_compress` | Caveman-compresses any prompt to cut token overhead |
-| Skill Searcher | `oclaw_skill_search` | Finds matching skills by keyword from the manifest |
-| Context Guard | `oclaw_context_check` | Warns when context window approaching limit |
-| Memory Writer | `oclaw_save_memory` | Writes structured memory files with correct frontmatter |
-| LaunchAgent Monitor | `oclaw_launchagent_status` | Lists all LaunchAgents with status, exit codes, PID |
-
-## ⚙️ GATEWAY ARCHITECTURE
-
-```
-Claude Code Tool Call
-    ↓
-OpenClaw MCP Server (port 51827)
-    ↓ skill lookup
-Skill Registry (this repo)
-    ↓ route decision
-Tier 0 Model (Ollama / Groq / Gemini / DeepSeek)
-    ↓ result
-Claude Code (final output only if needed)
-```
-
-**LaunchAgent config** (`~/Library/LaunchAgents/ai.openclaw.gateway.plist`):
-```xml
-<key>Label</key><string>ai.openclaw.gateway</string>
-<key>KeepAlive</key><true/>
-<key>RunAtLoad</key><true/>
-<!-- port 51827, working dir: ~/installed-repos/openclaw -->
-```
-
-## 💡 SKILL SCHEMA
-
-Every official skill file:
-
-```yaml
 ---
-skill: oclaw_route
-version: 2.1.0
-status: production
-mcp_tool_name: oclaw_route
-tier: 0
-models: [ollama:llama3, groq:llama3-70b, gemini:flash, deepseek-v3]
-fallback: claude-haiku
+
+## 🧠 OVERVIEW
+
+Official repository of Claude Code skill definitions for the OpenClaw gateway. These skills extend Claude Code's capabilities with domain-specific knowledge, tool orchestration, and automated workflows. All skills follow the blockchain manifest pattern — load only what's needed, unload after.
+
+| Component | Value |
+|---|---|
+| Gateway | OpenClaw (ai.openclaw.gateway LaunchAgent) |
+| Skill format | SKILL.md with frontmatter metadata |
+| Activation | `skill-on <name>` / auto via `skill-auto-activate` |
+| Location | `~/.claude/skills/` (active) or `~/.claude/skills-archive/` (dormant) |
+| Lock file | `~/.claude/skills-lock.json` (manifest) |
+
 ---
-Route any task to the cheapest capable model. Accepts a task description
-and complexity score (1-10), returns selected model + rationale.
 
-Input: { task: string, complexity: 1-10, context_size: number }
-Output: { model: string, reason: string, estimated_cost: number }
+## ⚙️ SKILL ARCHITECTURE
+
+```
+~/.claude/skills/              ← always-active core skills
+~/.claude/skills-archive/      ← dormant, loaded on demand
+~/.claude/bin/skill-on         ← activate: moves archive→active
+~/.claude/bin/skill-off        ← deactivate: moves active→archive
+~/.claude/bin/skill-search     ← find skills by keyword
+~/.claude/bin/skill-auto-activate  ← UserPromptSubmit hook
 ```
 
-## 🔧 SKILL LIFECYCLE
+| Component | Purpose |
+|---|---|
+| `SKILL.md` | Skill definition file with instructions |
+| `skills-lock.json` | Blockchain manifest tracking active state |
+| `skill-router` | Routes prompts to relevant skills |
+| `find-skills` | Discovery tool for skill matching |
 
-```bash
-# Promote a skill from archive to official
-cp ~/.claude/skills-archive/my-skill.md ~/installed-repos/openclaw-skills-official/skills/
-# → triggers gateway reload via file watcher
+---
 
-# Check skill status
-curl http://127.0.0.1:51827/skills | jq '.[] | .name, .status'
+## 📦 SKILL CATEGORIES
 
-# Invoke a skill directly
-curl -X POST http://127.0.0.1:51827/invoke   -d '{"skill": "oclaw_compress", "input": {"text": "long prompt here"}}'
-
-# Reload skills without restarting gateway
-curl -X POST http://127.0.0.1:51827/reload
-```
-
-## ☠️ OFFICIAL VS ARCHIVE
-
-| Criterion | Official (this repo) | Archive (`hmz-skills-archive`) |
+| Category | Skills | Auto-activated by |
 |---|---|---|
-| Tested in production | Yes | No |
-| Has output schema | Required | Optional |
-| Versioned | Semver | none |
-| Auto-loads at startup | Yes | No — manual activation only |
-| Failure behavior | Logged + fallback | May crash silently |
+| Core (always on) | caveman, compress, context-compression, compact-guard, summarize, skill-router | Always |
+| Ads | ads-strategy, ads-copy, ads-creative, ads-keywords | "ads, ppc, meta, google ads, campaign" |
+| SEO/GEO | geo, geo-technical, geo-content, geo-schema | "seo, geo, ranking, schema" |
+| Legal | legal, legal-review | "legal, contract, nda, compliance" |
+| Agency | agency, agency-client, agency-pipeline | "agency, client, proposal" |
+| AI/Agents | all-agents | "agent, multi-agent, orchestrate" |
 
-Skills graduate from archive → official after: 5+ successful uses, defined schema, fallback behavior documented.
+---
 
-## 📁 REPO STRUCTURE
+## 📄 SKILL FORMAT
 
+```markdown
+---
+name: skill-name
+description: One-line description for auto-activation matching
+triggers: [keyword1, keyword2, keyword3]
+tier: core|domain|specialized
+---
+
+# Skill: <Name>
+
+## Purpose
+What this skill does and when to use it.
+
+## Instructions
+Step-by-step behavior for Claude to follow.
+
+## Examples
+Concrete examples of the skill in action.
 ```
-hmz-openclaw-skills-official/
-├── skills/
-│   ├── oclaw_route.md
-│   ├── oclaw_estimate_cost.md
-│   ├── oclaw_compress.md
-│   ├── oclaw_skill_search.md
-│   ├── oclaw_context_check.md
-│   ├── oclaw_save_memory.md
-│   └── oclaw_launchagent_status.md
-├── registry.json            ← machine-readable skill manifest
-├── CHANGELOG.md             ← version history per skill
-└── tests/
-    └── skill-smoke-tests.sh ← validates all skills on gateway startup
-```
+
+---
+
+## 💡 TIPS
+
+■ **Skill Management (5)**
+| Tip | Source |
+|---|---|
+| `skill-search <keyword>` finds the right skill before activating | CLI ref |
+| Never leave domain skills active after task — always run `skill-off` | Gating protocol |
+| `skill-auto-activate` runs on every prompt via UserPromptSubmit hook | Hook config |
+| Core skills cost near-zero tokens — domain skills cost more | Token economics |
+| `~/.claude/skills-lock.json` shows currently active skill manifest | Manifest |
+
+■ **Development (4)**
+| Tip | Source |
+|---|---|
+| New skills go in `skills-archive/` first — activate to test | Dev workflow |
+| Skill triggers must be specific — avoid broad words that fire on everything | Design rule |
+| Test skill with `skill-on <name>` then test prompt, then `skill-off` | QA workflow |
+| SKILL.md frontmatter `description` is used for auto-match — make it specific | Format spec |
+
+---
+
+## ☠️ TOOLS REPLACED
+
+| OpenClaw Skills | Replaced |
+|---|---|
+| Domain-specific Claude behavior | Generic prompts every time |
+| Auto-activation | Manually pasting instructions |
+| Skill gating | Loading everything = slow, expensive |
+| Manifest tracking | Not knowing what's active |
+
+---
+
+## ⚠️ GOTCHAS
+
+| Issue | Fix |
+|---|---|
+| Skill fires on wrong prompt | Tighten trigger keywords in frontmatter |
+| Skill stays active after task | Always `skill-off <name>` after completion |
+| `skill-auto-activate` not running | Check UserPromptSubmit hook in settings.json |
+| Skills in wrong folder | `active → ~/.claude/skills/`, `dormant → skills-archive/` |
+
+---
+
+*Part of [DigiMinds AI Agency Stack](https://github.com/hmzainjamil) — OpenClaw skill ecosystem*
