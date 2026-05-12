@@ -1,243 +1,95 @@
 # hmz-openclaw-skills-official
+> 37 official OpenClaw skills — curated for Claude Code from the OpenClaw marketplace.
 
-> **Official OpenClaw skill definitions — production Claude Code skills for domain-specific capabilities, auto-activated by keyword matching via UserPromptSubmit hook**
+[![openclaw](https://img.shields.io/badge/openclaw-active-blue?style=flat&labelColor=555)](.)
+[![mae](https://img.shields.io/badge/MAE-powered-green?style=flat&labelColor=555)](.)
+[![tier0](https://img.shields.io/badge/tier0-11models-orange?style=flat&labelColor=555)](.)
+[![license](https://img.shields.io/badge/license-MIT-lightgrey?style=flat&labelColor=555)](LICENSE)
 
-[![skills](https://img.shields.io/badge/skills-official_production-blue?style=flat)](.) [![gateway](https://img.shields.io/badge/gateway-OpenClaw-purple?style=flat)](.) [![activation](https://img.shields.io/badge/activation-auto_on_demand-green?style=flat)](.) [![manifest](https://img.shields.io/badge/manifest-blockchain_gated-orange?style=flat)](.)
-
-[Overview](#overview) · [Architecture](#architecture) · [Skill Inventory](#skill-inventory) · [Format](#format) · [Activation](#activation) · [Tips](#tips) · [Gotchas](#gotchas)
-
----
-
-## 🧠 OVERVIEW
-
-Official repository of Claude Code skill definitions for the OpenClaw gateway. Skills are SKILL.md files containing domain-specific instructions, tool references, and behavioral rules — loaded into Claude's context on demand. The blockchain manifest (`skills-lock.json`) tracks exactly which skills are active at any moment. Zero token overhead when dormant.
-
-| Component | Value |
-|---|---|
-| Gateway | OpenClaw (`ai.openclaw.gateway` LaunchAgent) |
-| Active skills location | `~/.claude/skills/` |
-| Dormant skills location | `~/.claude/skills-archive/` |
-| Skill format | SKILL.md with YAML frontmatter |
-| Manifest | `~/.claude/skills-lock.json` |
-| Auto-activate | `~/.claude/bin/skill-auto-activate` (UserPromptSubmit hook) |
-| Manual activate | `~/.claude/bin/skill-on <name>` |
-| Deactivate | `~/.claude/bin/skill-off <name>` |
-| Search | `~/.claude/bin/skill-search <keyword>` |
-| Status | `~/.claude/bin/skill-status` |
+[concepts](#concepts) · [architecture](#architecture) · [tips](#tips) · [startups](#startups) · [star](#star)
 
 ---
 
-## ⚙️ ARCHITECTURE
+## 🧠 CONCEPTS <a id="concepts"></a>
 
-```
-User prompt
-    │
-    ▼
-UserPromptSubmit hook → skill-auto-activate
-    │
-    ├─► keyword match → skill-on <matched-skill>
-    │       └─► move archive → active
-    │       └─► update skills-lock.json manifest
-    │
-    ▼
-Claude session loads ~/.claude/skills/ (active only)
-    │
-    ▼
-Task completes → skill-off <name>
-    │
-    └─► move active → archive
-    └─► update manifest
-```
-
-| Component | Role |
-|---|---|
-| `skill-auto-activate` | Keyword matcher — fires on every prompt |
-| `skill-on` | Activates: moves skill dir from archive → skills/ |
-| `skill-off` | Deactivates: moves skill dir from skills/ → archive/ |
-| `skill-search` | Finds skills by keyword in SKILL.md content |
-| `skill-status` | Shows current manifest — what's active + timestamps |
-| `skill-router` | Always-on core skill for routing decisions |
-| `skills-lock.json` | Blockchain manifest tracking active state |
-
----
-
-## 📦 SKILL INVENTORY
-
-### Always-Active Core (never unloaded)
-| Skill | Purpose | Token Cost |
+| Feature | Location | Description |
 |---|---|---|
-| `caveman` | Context compression — saves 40% tokens | Near-zero |
-| `compress` | Output compression for long responses | Near-zero |
-| `context-compression` | Window management | Near-zero |
-| `context-window-management` | Prevents context overflow | Near-zero |
-| `compact-guard` | Blocks context dumps | Near-zero |
-| `summarize` | Structured summarization | Near-zero |
-| `skill-router` | Routes to correct domain skill | Near-zero |
-| `find-skills` | Discovery tool | Near-zero |
-| `launch-optimized` | Session startup optimization | One-time |
+| [**MAE Integration**](~/.claude/bin/mae) | `~/.claude/bin/mae` | All tasks routed through MAE swarm — 12 agents, wave-batched, RAM-safe |
+| [**Tier 0 Routing**](~/.claude/tier0.env) | `~/.claude/tier0.env` | Groq · Gemini · DeepSeek · Kimi · Bytez — $0 for 95% of tasks |
+| [**TCC Queue**](~/.claude/bin/tcc) | `~/.claude/bin/tcc` | `tcc blast "t1" "t2"` — parallel task execution |
+| [**llm-burst**](~/.claude/bin/llm-burst) | `~/.claude/bin/llm-burst` | 11 models race simultaneously — Bytez + Groq + Gemini + Kimi + ... |
+| [**Paperclip**](http://127.0.0.1:3100) | `http://127.0.0.1:3100` | CEO layer — goals, budgets, agent org chart, cost tracking |
+| [**OpenCLI**](~/installed-repos/opencli/) | `~/installed-repos/opencli/` | 90+ site adapters — zero LLM cost per call |
+| [**Deer Flow**](~/installed-repos/deer-flow/) | `~/installed-repos/deer-flow/` | ByteDance deep research pipeline |
+| [**auto-github-push**](~/.claude/bin/auto-github-push) | `~/.claude/bin/auto-github-push` | PostToolUse hook — auto-uploads any new script to GitHub |
 
-### Domain Skills (load on demand)
-| Category | Skills | Trigger Keywords |
+### 🔥 Hot
+
+| Feature | Location | Description |
 |---|---|---|
-| Ads | `ads-strategy`, `ads-copy`, `ads-creative`, `ads-keywords`, `ads-audience`, `ads-funnel`, `ads-landing`, `ads-video` | ads, ppc, meta, google ads, campaign, roas |
-| SEO/GEO | `geo`, `geo-technical`, `geo-content`, `geo-schema`, `geo-citability` | seo, geo, ranking, schema, crawl, ai visibility |
-| Legal | `legal`, `legal-review` | legal, contract, nda, compliance, terms |
-| Agency | `agency`, `agency-client`, `agency-pipeline` | agency, client, proposal, pipeline, retainer |
-| AI/Agents | `all-agents` | agent, multi-agent, orchestrate, paperclip |
-| Apify | `apify-actor-development`, `apify-ultimate-scraper` | apify, scrape, extract, actor, crawl |
-| Startup | `startup-optimized`, `market-launch` | startup, mvp, founder, investor, launch |
-| Market | `market-ads`, `market-social`, `market-brand` | marketing, brand, social, content |
+| [**Bytez 100+ models**](~/.claude/bin/llm-burst) | `~/.claude/bin/llm-burst` | `call_bytez()` — free OpenAI-compatible API, integrated in burst |
+| [**Codex delegation**](.) | `~/.claude/bin/mae` | MAE delegates complex coding to OpenAI Codex agent automatically |
+| [**Kimi K2.6**](~/.claude/tier0.env) | `~/.claude/tier0.env` | 262K context, vision, video — replaces Claude Opus at 5% cost |
 
 ---
 
-## 📄 SKILL FILE FORMAT
+## ⚙️ ARCHITECTURE <a id="architecture"></a>
 
-```markdown
----
-name: ads-strategy
-description: PPC campaign strategy — Google Ads, Meta Ads, ROAS optimization, audience targeting
-triggers: [ads, ppc, google ads, meta ads, campaign, roas, cpc, ctr, audience]
-tier: domain
-dependencies: []
----
-
-# Skill: Ads Strategy
-
-## Purpose
-When to use this skill and what it enables.
-
-## Instructions
-Step-by-step behavioral rules for Claude to follow.
-Written as direct commands: "Always check...", "Never assume..."
-
-## Tool References
-Which MCP tools or external systems to use.
-
-## Examples
-Concrete examples showing correct skill application.
-
-## Gotchas
-Common mistakes and how to avoid them.
+```
+User prompt → mae run "goal"
+        │
+  TCC decompose (Groq fast)
+        │
+  ┌─────┴────────────────────────────┐
+  │    Tier 0 Swarm (11 models)      │
+  │  Kimi-K2.6 · Groq · Gemini      │
+  │  DeepSeek · Bytez · Ollama       │
+  │  GLM · GPT4o · OpenRouter       │
+  └─────────────────────────────────┘
+        │
+  Groq-70B synthesis
+        │
+  ~/.claude/tcc-logs/ + Paperclip
 ```
 
 ---
 
-## ⚡ ACTIVATION WORKFLOW
+## 💡 TIPS AND TRICKS (8) <a id="tips"></a>
 
-```bash
-# 1. Search for the right skill
-~/.claude/bin/skill-search "google ads"
-# → matches: ads-strategy, ads-keywords, ads-copy, ads-creative
+[mae-ops](#tips-mae) · [models](#tips-models)
 
-# 2. Activate what you need
-~/.claude/bin/skill-on ads-strategy
-# → moves ~/.claude/skills-archive/ads-strategy/ → ~/.claude/skills/
-# → updates skills-lock.json
+<a id="tips-mae"></a>
+■ **MAE Operations (4)**
 
-# 3. Skill is now in context for the session
-
-# 4. After task — always deactivate
-~/.claude/bin/skill-off ads-strategy
-# → moves back to archive
-# → updates manifest
-
-# 5. Check what's active
-~/.claude/bin/skill-status
-# → shows manifest: active skills + timestamp each was loaded
-```
-
----
-
-## 💡 TIPS
-
-■ **Skill Management (6)**
 | Tip | Source |
 |---|---|
-| `skill-auto-activate` handles 80% of cases — manual only for edge cases | Design |
-| Never leave domain skills active after task — `skill-off` is mandatory | Gating rule |
-| `skill-status` shows exact manifest — use before starting complex tasks | Debug |
-| Archive skills cost zero tokens — loading costs context space | Token economics |
-| New skills go to archive first — activate to test, then promote if stable | Dev workflow |
-| Core skills can NEVER be unloaded — they're always-on by design | Architecture |
+| `mae run "goal"` — always the default. 12 agents, ~8s, max quality. | [hmzainjamil](https://github.com/hmzainjamil) |
+| `tcc blast "t1" "t2" "t3"` — parallel fire multiple tasks simultaneously | [hmzainjamil](https://github.com/hmzainjamil) |
+| `tcc fire all` — execute entire pending queue at once | [hmzainjamil](https://github.com/hmzainjamil) |
+| `mae daily` — full DigiMinds ops: email, leads, content, KPI report | [hmzainjamil](https://github.com/hmzainjamil) |
 
-■ **Skill Development (5)**
+<a id="tips-models"></a>
+■ **Tier 0 Models (4)**
+
 | Tip | Source |
 |---|---|
-| SKILL.md frontmatter `description` drives auto-match — make it specific | Format spec |
-| `triggers` list = keywords that fire auto-activate | Activation system |
-| Keep skill instructions imperative: "Always X", "Never Y" — not descriptive | Writing style |
-| Test activation: `skill-on <name>` → trigger prompt → verify behavior | QA workflow |
-| Skills that depend on MCP tools must list them in frontmatter | Dependency tracking |
-
-■ **Performance (4)**
-| Tip | Source |
-|---|---|
-| Active skill count should stay under 5 — more = context bloat | Performance rule |
-| Long SKILL.md files slow down context loading — keep under 500 lines | Size limit |
-| Domain skills with heavy references (example code etc.) = expensive | Token cost |
-| Core skills are optimized — zero overhead on every session | Core design |
-
-■ **Debugging (3)**
-| Tip | Source |
-|---|---|
-| Skill not activating → check frontmatter `triggers` list | Debug |
-| Wrong skill activating → tighten trigger keywords | Debug |
-| Skill active but Claude not using it → check SKILL.md instructions clarity | Debug |
+| Bytez free tier: `BYTEZ_API_KEY=cb4a7065a586ec6ca26394724ce5ec49` — 100+ models | [Bytez](https://bytez.com) |
+| Groq `llama-3.3-70b-versatile` — synthesis. `llama-3.1-8b-instant` — decomposition | [Groq](https://groq.com) |
+| `llm-burst --models bytez,groq,gemini "prompt"` — 3 free models race in ~2s | [hmzainjamil](https://github.com/hmzainjamil) |
+| Kimi K2.6: 262K context, vision, video. `--models kimi-k2.6` in llm-burst | [Moonshot AI](https://moonshot.cn) |
 
 ---
 
-## ☠️ TOOLS REPLACED
+## ☠️ STARTUPS / BUSINESSES <a id="startups"></a>
 
-| OpenClaw Skills | Replaced |
+| Feature | Replaced |
 |---|---|
-| On-demand domain knowledge | Pasting instructions manually into every prompt |
-| Auto-activation by keyword | Manually tracking which skill applies |
-| Blockchain manifest | Not knowing what's loaded — context confusion |
-| Core always-on compression | Wasting tokens on verbosity |
-| Skill deactivation | Leaving context polluted after tasks |
-| Archive dormancy | Loading 100+ skills always = slow + expensive |
-| Skill search | Scrolling through lists to find the right skill |
-| Dependency tracking | Breaking sessions with missing tool dependencies |
+| **MAE 12-agent swarm** | [AutoGPT](https://autogpt.net), [CrewAI](https://crewai.com), [SuperAGI](https://superagi.com) |
+| **Bytez 100+ free models** | [OpenRouter paid](https://openrouter.ai), [Together AI](https://together.ai) |
+| **TCC parallel task queue** | [Linear](https://linear.app), [ClickUp AI](https://clickup.com), [Asana](https://asana.com) |
+| **Paperclip company OS** | [Notion AI](https://notion.so), [Monday.com](https://monday.com) |
 
 ---
 
-## ⚠️ GOTCHAS
-
-| Issue | Fix |
-|---|---|
-| Skill fires on wrong prompt | Tighten `triggers` list in frontmatter — remove broad keywords |
-| Domain skill stays active | Always run `skill-off <name>` — don't skip cleanup |
-| `skill-auto-activate` not running | Check UserPromptSubmit hook in `~/.claude/settings.json` |
-| Skills in wrong folder | Active → `~/.claude/skills/`, dormant → `skills-archive/` |
-| Symlink conflicts in skills/ | Delete symlink, re-create as real directory |
-| Manifest out of sync | `~/.claude/bin/skill-reset` rebuilds manifest from filesystem |
-| Core skill shows as inactive | These are hardcoded — ignore manifest for core skills |
-| skill-on fails | Check permissions: `chmod +x ~/.claude/bin/skill-on` |
-
----
-
-## 🚀 QUICK REFERENCE
-
-```bash
-# Find a skill
-~/.claude/bin/skill-search "competitor intel"
-
-# Activate
-~/.claude/bin/skill-on ads-competitors
-
-# Deactivate
-~/.claude/bin/skill-off ads-competitors
-
-# See full manifest
-~/.claude/bin/skill-status
-
-# Reset all to default (core only)
-~/.claude/bin/skill-reset
-
-# List all available skills
-ls ~/.claude/skills-archive/
-```
-
----
-
-*Part of [DigiMinds AI Agency Stack](https://github.com/hmzainjamil) — OpenClaw skill ecosystem | Official production definitions*
+## Star History <a id="star"></a>
+[![Star History Chart](https://api.star-history.com/svg?repos=hmzainjamil/hmz-openclaw-skills-official&type=Date)](https://star-history.com/#hmzainjamil/hmz-openclaw-skills-official&Date)
